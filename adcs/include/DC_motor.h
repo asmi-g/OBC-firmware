@@ -7,7 +7,7 @@
 
 #include <stdbool.h>
 /*
-@brief
+@brief DC_Motor struct used to hold the motor's pwm modules and which HET driver its running on
 @param hetRam pointer to HET RAM
     hetRAM1: HET1 RAM pointer
     hetRAM2: HET2 RAM pointer 
