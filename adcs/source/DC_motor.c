@@ -1,10 +1,7 @@
 /* Include Files */
-#include "sys_common.h"
-#include "system.h"
 
 /* USER CODE BEGIN (1) */
 #include "DC_motor.h"
-#include "het.h"
 #include <math.h>
 /* USER CODE END */
 
@@ -44,19 +41,34 @@ static void driveMotor_Torque (struct DC_Motor *this, double torque){
     }
 
 }
-/* Drives the motor clockwise at 50% speed */
+/* 
+@brief Drives the motor clockwise at 50% speed 
+@param pointer to the DC_Motor struct
+*/
 void forward(struct DC_Motor *this){
     pwmSetDuty(this->hetRam,this->firstpwm, 50); //Write PWM to forward pin
     pwmSetDuty(this->hetRam,this->secondpwm,0); //Reverse pin is pulled low
 }
+/* 
+@brief Drives the motor counterclockwise at 50% speed 
+@param pointer to the DC_Motor struct
+*/
 void reverse(struct DC_Motor *this){
     pwmSetDuty(this->hetRam,this->firstpwm,0); //forwards pin is pulled low
     pwmSetDuty(this->hetRam,this->secondpwm,50); //Write PWM to reverse pin
 }
+/* 
+@brief Sets PWM signal to 0, stopping the motor until PWM signal is changed
+@param pointer to the DC_Motor struct which will 
+*/
 void DC_break(struct DC_Motor *this){
     pwmSetDuty(this->hetRam,this->firstpwm,0);
     pwmSetDuty(this->hetRam,this->secondpwm,0);
 }
+/* 
+@brief Stops the motor, must be reinitialized using PWMStart or hetInit
+@param pointer to the DC_Motor struct which will 
+*/
 void stop_motor(struct DC_Motor *this){
     pwmStop(this->hetRam, this->firstpwm);
     pwmStop(this->hetRam, this->secondpwm);
