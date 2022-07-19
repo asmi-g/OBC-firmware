@@ -6,14 +6,21 @@
 /* USER CODE END */
 
 /* USER CODE BEGIN (2) */
-
+/*
+@brief initializes motor with default configurations set in HalCoGen
+    Default config is duty cycle of 50% and period of 1000ns; TCLK = 110MHz
+@param DC_Motor: pointer to motor struct
+*/
 static void start_motor (struct DC_Motor *this){
     hetInit();
-    //Default config is duty cycle of 50% and period of 1000ns; TCLK = 110MHz
     pwmStart(this->hetRam, this->firstpwm);
     pwmStart(this->hetRam, this->secondpwm);
 }
-/* speed also controls the direction, +speed = CW, -speed = CCW */
+/* 
+@brief drive motor with desired speed;  
+@param DC_Motor: pointer to motor struct
+@param speed: value from -100 to 100, determines duty cycle and direction (negative = CCW, positive = CW)
+*/
 static void driveMotor(struct DC_Motor *this, int speed){
     if (speed > 100) { speed = 100; }
     else if (speed < -100 ) { speed = -100; }
@@ -43,7 +50,7 @@ static void driveMotor_Torque (struct DC_Motor *this, double torque){
 }
 /* 
 @brief Drives the motor clockwise at 50% speed 
-@param pointer to the DC_Motor struct
+@param DC_Motor pointer to the Motor struct
 */
 void forward(struct DC_Motor *this){
     pwmSetDuty(this->hetRam,this->firstpwm, 50); //Write PWM to forward pin
@@ -51,7 +58,7 @@ void forward(struct DC_Motor *this){
 }
 /* 
 @brief Drives the motor counterclockwise at 50% speed 
-@param pointer to the DC_Motor struct
+@param pointer to the Motor struct
 */
 void reverse(struct DC_Motor *this){
     pwmSetDuty(this->hetRam,this->firstpwm,0); //forwards pin is pulled low
@@ -59,7 +66,7 @@ void reverse(struct DC_Motor *this){
 }
 /* 
 @brief Sets PWM signal to 0, stopping the motor until PWM signal is changed
-@param pointer to the DC_Motor struct which will 
+@param pointer to the Motor struct
 */
 void DC_break(struct DC_Motor *this){
     pwmSetDuty(this->hetRam,this->firstpwm,0);
@@ -67,7 +74,7 @@ void DC_break(struct DC_Motor *this){
 }
 /* 
 @brief Stops the motor, must be reinitialized using PWMStart or hetInit
-@param pointer to the DC_Motor struct which will 
+@param pointer to the Motor struct
 */
 void stop_motor(struct DC_Motor *this){
     pwmStop(this->hetRam, this->firstpwm);
