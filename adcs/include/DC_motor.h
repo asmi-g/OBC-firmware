@@ -25,12 +25,23 @@
 struct DC_Motor {
     hetRAMBASE_t* hetRam;
     uint32* firstpwm, secondpwm;
-    double const torqueConst; //Torque constant should be the torque produced at 100% duty cycle
+    double const torqueConst = 1.2; //Torque constant should be the torque produced at 100% duty cycle
 };
 
-extern const struct DC_MotorClass {
-    struct DC_Motor (*new)(hetRAMBASE_t* hetNum , uint32* pwmModule1, uint32* pwmModule2);
-} DC_Motor;
+/*
+    Related functions
+*/
+void start_motor (struct DC_Motor *this);
+void driveMotor(struct DC_Motor *this, int speed);
+void driveMotor_Torque (struct DC_Motor *this, double torque);
+void forward(struct DC_Motor *this);
+void reverse(struct DC_Motor *this);
+void DC_break(struct DC_Motor *this);
+void stop_motor(struct DC_Motor *this);
+
+// extern const struct DC_MotorClass {
+//     struct DC_Motor (*new)(hetRAMBASE_t* hetNum , uint32* pwmModule1, uint32* pwmModule2);
+// } DC_Motor;
 
 #endif //C_DC_MotorLib_LIBRARY_H
 

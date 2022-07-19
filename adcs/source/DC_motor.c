@@ -11,7 +11,7 @@
     Default config is duty cycle of 50% and period of 1000ns; TCLK = 110MHz
 @param DC_Motor: pointer to motor struct
 */
-static void start_motor (struct DC_Motor *this){
+void start_motor (struct DC_Motor *this){
     hetInit();
     pwmStart(this->hetRam, this->firstpwm);
     pwmStart(this->hetRam, this->secondpwm);
@@ -21,7 +21,7 @@ static void start_motor (struct DC_Motor *this){
 @param DC_Motor: pointer to motor struct
 @param speed: value from -100 to 100, determines duty cycle and direction (negative = CCW, positive = CW)
 */
-static void driveMotor(struct DC_Motor *this, int speed){
+void driveMotor(struct DC_Motor *this, int speed){
     if (speed > 100) { speed = 100; }
     else if (speed < -100 ) { speed = -100; }
     //This function will depend on what the datasheet of the motor driver says; H-Bridge
@@ -35,7 +35,7 @@ static void driveMotor(struct DC_Motor *this, int speed){
         pwmSetDuty(this->hetRam,this->secondpwm,abs(speed)); //Write PWM to reverse pin
     }
 }
-static void driveMotor_Torque (struct DC_Motor *this, double torque){
+void driveMotor_Torque (struct DC_Motor *this, double torque){
     double speed;
     speed = 100*(torque/this->torqueConst); //Convert the torque into duty cycle %
     if (speed > 0) {
@@ -80,9 +80,9 @@ void stop_motor(struct DC_Motor *this){
     pwmStop(this->hetRam, this->firstpwm);
     pwmStop(this->hetRam, this->secondpwm);
 }
-static struct DC_Motor new(hetRAMBASE_t* hetNum , uint32* pwmModule1, uint32* pwmModule2) {
-    return (struct DC_Motor){.hetRam = hetNum,.firstpwm = pwmModule1, .secondpwm = pwmModule2, .torqueConst = 1.23};
-}
-const struct DC_MotorClass DC_Motor={.new=new};
+// static struct DC_Motor new(hetRAMBASE_t* hetNum , uint32* pwmModule1, uint32* pwmModule2) {
+//     return (struct DC_Motor){.hetRam = hetNum,.firstpwm = pwmModule1, .secondpwm = pwmModule2, .torqueConst = 1.23};
+// }
+// const struct DC_MotorClass DC_Motor={.new = &new};
 
 /* USER CODE END */
