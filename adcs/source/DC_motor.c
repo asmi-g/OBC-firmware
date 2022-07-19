@@ -50,7 +50,7 @@ static void driveMotor_Torque (struct DC_Motor *this, double torque){
 }
 /* 
 @brief Drives the motor clockwise at 50% speed 
-@param DC_Motor pointer to the Motor struct
+@param DC_Motor: pointer to motor struct
 */
 void forward(struct DC_Motor *this){
     pwmSetDuty(this->hetRam,this->firstpwm, 50); //Write PWM to forward pin
@@ -58,7 +58,7 @@ void forward(struct DC_Motor *this){
 }
 /* 
 @brief Drives the motor counterclockwise at 50% speed 
-@param pointer to the Motor struct
+@param DC_Motor: pointer to motor struct
 */
 void reverse(struct DC_Motor *this){
     pwmSetDuty(this->hetRam,this->firstpwm,0); //forwards pin is pulled low
@@ -66,7 +66,7 @@ void reverse(struct DC_Motor *this){
 }
 /* 
 @brief Sets PWM signal to 0, stopping the motor until PWM signal is changed
-@param pointer to the Motor struct
+@param DC_Motor: pointer to motor struct
 */
 void DC_break(struct DC_Motor *this){
     pwmSetDuty(this->hetRam,this->firstpwm,0);
@@ -74,7 +74,7 @@ void DC_break(struct DC_Motor *this){
 }
 /* 
 @brief Stops the motor, must be reinitialized using PWMStart or hetInit
-@param pointer to the Motor struct
+@param DC_Motor: pointer to motor struct
 */
 void stop_motor(struct DC_Motor *this){
     pwmStop(this->hetRam, this->firstpwm);
