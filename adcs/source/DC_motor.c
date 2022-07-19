@@ -81,7 +81,7 @@ void stop_motor(struct DC_Motor *this){
     pwmStop(this->hetRam, this->secondpwm);
 }
 static struct DC_Motor new(hetRAMBASE_t* hetNum , uint32* pwmModule1, uint32* pwmModule2) {
-    return (struct DC_Motor){.hetRam = hetNum,.firstpwm = pwmModule, .secondpwm = pwmModule2, .torqueConst = 1.23};
+    return (struct DC_Motor){.hetRam = hetNum,.firstpwm = pwmModule1, .secondpwm = pwmModule2, .torqueConst = 1.23};
 }
 const struct DC_MotorClass DC_Motor={.new=new};
 
