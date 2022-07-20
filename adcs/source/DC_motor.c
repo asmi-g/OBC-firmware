@@ -3,6 +3,8 @@
 /* USER CODE BEGIN (1) */
 #include "DC_motor.h"
 #include <math.h>
+#include <time.h>
+#include <unistd.h>
 /* USER CODE END */
 
 /* USER CODE BEGIN (2) */
@@ -20,33 +22,49 @@ void start_motor (struct DC_Motor *this){
 @brief drive motor with desired speed;  
 @param DC_Motor: pointer to motor struct
 @param speed: value from -100 to 100, determines duty cycle and direction (negative = CCW, positive = CW)
+@param per: period of the PWM signal
 */
-void driveMotor(struct DC_Motor *this, int speed){
+void driveMotor(struct DC_Motor *this, int speed, int per){
+    hetSIGNAL_t sig; 
     if (speed > 100) { speed = 100; }
     else if (speed < -100 ) { speed = -100; }
-    //This function will depend on what the datasheet of the motor driver says; H-Bridge
-    //Should be able to handle all polarity reversals for us
+    sig.period = per;
+    
     if (speed > 0) {
-        pwmSetDuty(this->hetRam,this->firstpwm,speed); //Write PWM to forward pin
+        sig.duty = speed;
+        pwmSetSignal(this->hetRam,this->firstpwm, sig); //Write PWM to forward pin
         pwmSetDuty(this->hetRam,this->secondpwm,0); //Reverse pin is pulled low
     }
     else {
+        sig.duty = abs(speed);
         pwmSetDuty(this->hetRam,this->firstpwm,0); //forwards pin is pulled low
-        pwmSetDuty(this->hetRam,this->secondpwm,abs(speed)); //Write PWM to reverse pin
+        pwmSetDuty(this->hetRam,this->secondpwm, sig); //Write PWM to reverse pin
     }
 }
-void driveMotor_Torque (struct DC_Motor *this, double torque){
+/* 
+@brief drive motor with desired speed;  
+@param DC_Motor: pointer to motor struct
+@param torque: 
+@param dur: the duration of how long the motor should run for
+*/
+void driveMotor_Torque (struct DC_Motor *this, double torque, int dur){
     double speed;
     speed = 100*(torque/this->torqueConst); //Convert the torque into duty cycle %
+    hetSIGNAL_t sig; 
+    if (speed > 100) { speed = 100; }
+    else if (speed < -100 ) { speed = -100; }
+    sig.period = per;
+    
     if (speed > 0) {
-        pwmSetDuty(this->hetRam,this->firstpwm,speed); //Write PWM to forward pin
+        sig.duty = speed;
+        pwmSetSignal(this->hetRam,this->firstpwm, sig); //Write PWM to forward pin
         pwmSetDuty(this->hetRam,this->secondpwm,0); //Reverse pin is pulled low
     }
     else {
+        sig.duty = abs(speed);
         pwmSetDuty(this->hetRam,this->firstpwm,0); //forwards pin is pulled low
-        pwmSetDuty(this->hetRam,this->secondpwm,abs(speed)); //Write PWM to reverse pin
+        pwmSetDuty(this->hetRam,this->secondpwm, sig); //Write PWM to reverse pin
     }
-
 }
 /* 
 @brief Drives the motor clockwise at 50% speed 
