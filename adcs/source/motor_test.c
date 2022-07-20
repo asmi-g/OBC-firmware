@@ -1,5 +1,6 @@
 #include "motor_test.h"
 #include <time.h>
+#include <unistd.h>
 
 /*
 @brief Example of running motor with desired speed
@@ -14,8 +15,6 @@ void motor_speedtest () {
     printf("Running motor1 at 50 percent duty cycle with a 1000us period");
     sleep(1);
     driveMotor(&motor1, 50, 1000);
-
-    sleep(5);
     //Introducing more motors  
     struct DC_Motor motor2;
     motor2.hetRam = hetRAM1;
@@ -44,9 +43,10 @@ void motor_directiontest() {
 @brief Test for time between changing pwm signals
 */
 void PWMsignaltest() {
-
-}
-
-void main (void) {
+    pwmEnableNotification(hetRAM1, pwm0, pwmEND_OF_DUTY);
+    struct DC_Motor motor1;
+    motor1.hetRam = hetRAM1;
+    motor1.firstpwm = pwm0;
+    motor1.secondpwm = pwm1;
 
 }
