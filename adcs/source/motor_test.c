@@ -26,7 +26,9 @@ void motor_speedtest () {
     sleep(1);
     driveMotor(&motor2, 75, 1000);
 }
-
+/*
+@brief Testing changing directions of the motors (NOT DONE YET)
+*/
 void motor_directiontest() {
     struct DC_Motor motor1;
     motor1.hetRam = hetRAM1;
@@ -40,7 +42,7 @@ void motor_directiontest() {
     driveMotor(&motor1, -50, 1000);
 }
 /*
-@brief Test for time between changing pwm signals
+@brief Test for time between changing pwm signals (NOT DONE YET)
 */
 void PWMsignaltest() {
     pwmEnableNotification(hetRAM1, pwm0, pwmEND_OF_DUTY);
@@ -49,4 +51,5 @@ void PWMsignaltest() {
     motor1.firstpwm = pwm0;
     motor1.secondpwm = pwm1;
 
+    hetGetTimestamp(hetRAM1);
 }
