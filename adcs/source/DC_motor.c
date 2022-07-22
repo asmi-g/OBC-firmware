@@ -24,12 +24,12 @@ void start_motor (struct DC_Motor *this){
 @param speed: value from -100 to 100, determines duty cycle and direction (negative = CCW, positive = CW)
 @param per: period of the PWM signal
 */
-void driveMotor(struct DC_Motor *this, int speed, int per){
+void driveMotor(struct DC_Motor *this, int speed, int per, int dur){
     hetSIGNAL_t sig; 
     if (speed > 100) { speed = 100; }
     else if (speed < -100 ) { speed = -100; }
     sig.period = per;
-    
+
     if (speed > 0) {
         sig.duty = speed;
         pwmSetSignal(this->hetRam,this->firstpwm, sig); //Write PWM to forward pin
@@ -38,8 +38,11 @@ void driveMotor(struct DC_Motor *this, int speed, int per){
     else {
         sig.duty = abs(speed);
         pwmSetDuty(this->hetRam,this->firstpwm,0); //forwards pin is pulled low
-        pwmSetDuty(this->hetRam,this->secondpwm, sig); //Write PWM to reverse pin
+        pwmSetSignal(this->hetRam,this->secondpwm, sig); //Write PWM to reverse pin
     }
+    sleep(dur);
+    DC_break(dur);
+    return 0;
 }
 /* 
 @brief drive motor with desired speed;  
@@ -47,7 +50,7 @@ void driveMotor(struct DC_Motor *this, int speed, int per){
 @param torque: 
 @param dur: the duration of how long the motor should run for
 */
-void driveMotor_Torque (struct DC_Motor *this, double torque, int dur){
+void driveMotor_Torque (struct DC_Motor *this, double torque, int per, int dur){
     double speed;
     speed = 100*(torque/this->torqueConst); //Convert the torque into duty cycle %
     hetSIGNAL_t sig; 
@@ -63,8 +66,11 @@ void driveMotor_Torque (struct DC_Motor *this, double torque, int dur){
     else {
         sig.duty = abs(speed);
         pwmSetDuty(this->hetRam,this->firstpwm,0); //forwards pin is pulled low
-        pwmSetDuty(this->hetRam,this->secondpwm, sig); //Write PWM to reverse pin
+        pwmSetSignal(this->hetRam,this->secondpwm, sig); //Write PWM to reverse pin
     }
+    sleep (dur);
+    DC_break(this);
+    return 0;
 }
 /* 
 @brief Drives the motor clockwise at 50% speed 
