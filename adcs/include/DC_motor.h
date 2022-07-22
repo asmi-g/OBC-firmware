@@ -36,7 +36,7 @@ void driveMotor(struct DC_Motor *this, int speed, int per, int dur);
 void driveMotor_Torque (struct DC_Motor *this, double torque, int per, int dur);
 void forward(struct DC_Motor *this);
 void reverse(struct DC_Motor *this);
-void DC_break(struct DC_Motor *this);
+void brake(struct DC_Motor *this);
 void stop_motor(struct DC_Motor *this);
 
 // extern const struct DC_MotorClass {

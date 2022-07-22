@@ -92,7 +92,7 @@ void reverse(struct DC_Motor *this){
 @brief Sets PWM signal to 0, stopping the motor until PWM signal is changed
 @param DC_Motor: pointer to motor struct
 */
-void DC_break(struct DC_Motor *this){
+void brake(struct DC_Motor *this){
     pwmSetDuty(this->hetRam,this->firstpwm,0);
     pwmSetDuty(this->hetRam,this->secondpwm,0);
 }
