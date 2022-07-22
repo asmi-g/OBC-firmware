@@ -50,6 +50,6 @@ void PWMsignaltest() {
     motor1.hetRam = hetRAM1;
     motor1.firstpwm = pwm0;
     motor1.secondpwm = pwm1;
-
+    
     hetGetTimestamp(hetRAM1);
 }

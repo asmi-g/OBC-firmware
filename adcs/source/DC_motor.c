@@ -13,13 +13,16 @@
     Default config is duty cycle of 50% and period of 1000ns; TCLK = 110MHz
 @param DC_Motor: pointer to motor struct
 */
-void start_motor (struct DC_Motor *this){
+void init_motor(struct DC_Motor *this){
     hetInit();
+    printf("Starting motor with default configurations");
+}
+void start_motor (struct DC_Motor *this){
     pwmStart(this->hetRam, this->firstpwm);
     pwmStart(this->hetRam, this->secondpwm);
 }
 /* 
-@brief drive motor with desired speed;  
+@brief control motor speed with duty cycle and period  
 @param DC_Motor: pointer to motor struct
 @param speed: value from -100 to 100, determines duty cycle and direction (negative = CCW, positive = CW)
 @param per: period of the PWM signal
@@ -40,8 +43,8 @@ void driveMotor(struct DC_Motor *this, int speed, int per, int dur){
         pwmSetDuty(this->hetRam,this->firstpwm,0); //forwards pin is pulled low
         pwmSetSignal(this->hetRam,this->secondpwm, sig); //Write PWM to reverse pin
     }
-    sleep(dur);
-    DC_break(dur);
+    sleep(dur); //Just have some sort of delay here, not sure if this even works right now
+    DC_break(this);
     return 0;
 }
 /* 
@@ -51,7 +54,7 @@ void driveMotor(struct DC_Motor *this, int speed, int per, int dur){
 @param dur: the duration of how long the motor should run for
 */
 void driveMotor_Torque (struct DC_Motor *this, double torque, int per, int dur){
-    double speed;
+    double speed; 
     speed = 100*(torque/this->torqueConst); //Convert the torque into duty cycle %
     hetSIGNAL_t sig; 
     if (speed > 100) { speed = 100; }
@@ -68,7 +71,7 @@ void driveMotor_Torque (struct DC_Motor *this, double torque, int per, int dur){
         pwmSetDuty(this->hetRam,this->firstpwm,0); //forwards pin is pulled low
         pwmSetSignal(this->hetRam,this->secondpwm, sig); //Write PWM to reverse pin
     }
-    sleep (dur);
+    sleep(dur); //Just have some sort of delay here, not sure if this even works right now
     DC_break(this);
     return 0;
 }
