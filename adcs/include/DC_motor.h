@@ -31,9 +31,10 @@ struct DC_Motor {
 /*
     Related functions
 */
+void init_motor(struct DC_Motor *this);
 void start_motor (struct DC_Motor *this);
-void driveMotor(struct DC_Motor *this, int speed, int per, int dur);
-void driveMotor_Torque (struct DC_Motor *this, double torque, int per, int dur);
+void driveMotor(struct DC_Motor *this, int speed, int per);
+void driveMotor_Torque (struct DC_Motor *this, double torque, int per);
 void forward(struct DC_Motor *this);
 void reverse(struct DC_Motor *this);
 void brake(struct DC_Motor *this);
