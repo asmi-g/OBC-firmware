@@ -15,7 +15,7 @@ void motor_speedtest () {
     printf("Running motor1 at 50 percent duty cycle with a 1000us period");
     driveMotor(&motor1, 50, 1000);
     sleep(5);
-    brake(&motor1);
+    brake(&motor1); //Stop motors, set PWM signal to low 
 
     //Introducing more motors  
     struct DC_Motor motor2;

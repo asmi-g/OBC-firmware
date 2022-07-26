@@ -27,7 +27,7 @@ void start_motor (struct DC_Motor *this){
 @param speed: value from -100 to 100, determines duty cycle and direction (negative = CCW, positive = CW)
 @param per: period of the PWM signal
 */
-void driveMotor(struct DC_Motor *this, int speed, int per){
+void driveMotor(struct DC_Motor *this, uint32 speed, float64 per){
     hetSIGNAL_t sig; 
     if (speed > 100) { speed = 100; }
     else if (speed < -100 ) { speed = -100; }
@@ -43,16 +43,16 @@ void driveMotor(struct DC_Motor *this, int speed, int per){
         pwmSetDuty(this->hetRam,this->firstpwm,0); //forwards pin is pulled low
         pwmSetSignal(this->hetRam,this->secondpwm, sig); //Write PWM to reverse pin
     }
-    return 0;
+    return;
 }
 /* 
 @brief drive motor with desired speed;  
 @param DC_Motor: pointer to motor struct
-@param torque: 
-@param dur: the duration of how long the motor should run for
+@param torque: The desired torque that the user wants to run the motor at
+@param per: period of the PWM signal
 */
 void driveMotor_Torque (struct DC_Motor *this, double torque, int per){
-    double speed; 
+    uint32 speed;
     speed = 100*(torque/this->torqueConst); //Convert the torque into duty cycle %
     hetSIGNAL_t sig; 
     if (speed > 100) { speed = 100; }
@@ -69,7 +69,7 @@ void driveMotor_Torque (struct DC_Motor *this, double torque, int per){
         pwmSetDuty(this->hetRam,this->firstpwm,0); //forwards pin is pulled low
         pwmSetSignal(this->hetRam,this->secondpwm, sig); //Write PWM to reverse pin
     }
-    return 0;
+    return;
 }
 /* 
 @brief Drives the motor clockwise at 50% speed 
@@ -103,9 +103,5 @@ void stop_motor(struct DC_Motor *this){
     pwmStop(this->hetRam, this->firstpwm);
     pwmStop(this->hetRam, this->secondpwm);
 }
-// static struct DC_Motor new(hetRAMBASE_t* hetNum , uint32* pwmModule1, uint32* pwmModule2) {
-//     return (struct DC_Motor){.hetRam = hetNum,.firstpwm = pwmModule1, .secondpwm = pwmModule2, .torqueConst = 1.23};
-// }
-// const struct DC_MotorClass DC_Motor={.new = &new};
 
 /* USER CODE END */
