@@ -55,23 +55,21 @@ void VN_SPI_SetSS(unsigned char sensorID, VN_PinState state){
 * Return         : The data received on the SPI bus
 *******************************************************************************/
 unsigned long VN_SPI_SendReceive(unsigned long data){
-  loadDataPattern(D_SIZE,&TX_DATA[0]);
-
   /* Send out 4 bytes over SPI */
   unsigned long i;
   unsigned long ret;
-  uint16 TX_DATA[D_SIZE];         /* transmit buffer in sys ram */
-  uint16 RX_DATA[D_SIZE] = {0};    /* receive  buffer in sys ram */
-  
+  uint16 recieved;
+
   for(i = 0; i < 4; i++){
     /*Wait until the transfer is complete*/
     while(!mibspiIsTransferComplete(spiREG1,0)){
-      mibspiSetData(mibspiREG1, 0, &TX_DATA);
+      mibspiSetData(mibspiREG1, 0, VN_BYTE(data,i));
+      
 
       mibspiTransfer(mibspiREG1, 0);
     }
-    mibspiGetData(mibspiREG1, 0, &RX_DATA);
-        
+    mibspiGetData(mibspiREG1, 0, &recieved);
+    ret |=  (unsigned long)recieved << (8*i);
   }
   return ret;  
 }
