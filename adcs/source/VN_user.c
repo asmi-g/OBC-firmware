@@ -8,9 +8,8 @@
 #include "mibspi.h"
 #include "sys_dma.h"
 
-/* Defines -------------------------------------------------------------------*/
+/* Define -------------------------------------------------------------------*/
 #define D_SIZE 127
-
 /*******************************************************************************
 * Function Name  : VN_SPI_SetSS(unsigned char sensorID, bool LineState)
 * Description    : This is a generic function that will set the SPI slave select
@@ -32,11 +31,11 @@ void VN_SPI_SetSS(unsigned char sensorID, VN_PinState state){
     case 0:
       if(state == VN_PIN_LOW) {
         /* Start SPI Transaction - Pull SPI CS line low */
-        gioSetBit(mibspiPORT1, 0, 0);
+        gioSetBit(mibspiPORT1, PIN_CS0, 0);
       }
       else {
         /* End SPI transaction - Pull SPI CS line high */
-        gioSetBit(mibspiPORT1, 0, 1);
+        gioSetBit(mibspiPORT1, PIN_CS0, 1);
       }
       break;
   }
@@ -57,7 +56,7 @@ void VN_SPI_SetSS(unsigned char sensorID, VN_PinState state){
 unsigned long VN_SPI_SendReceive(unsigned long data){
   /* Send out 4 bytes over SPI */
   unsigned long i;
-  unsigned long ret;
+  unsigned long ret = 0;
   uint16 recieved;
 
   for(i = 0; i < 4; i++){
