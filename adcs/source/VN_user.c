@@ -1,31 +1,15 @@
-/***************** (C) COPYRIGHT 2009 VectorNav Technologies *******************
-* File Name          : VN_user.c
-* Author             : John Brashear
-* Version            : V1.0.0
-* Date               : 09/26/2009
-* Description        : This file contains all the functions that are hardware 
-*                    : specific. These functions need to be modified by the 
-*                    : user to be compatible with their hardware architecture.
-********************************************************************************
-* THE PRESENT FIRMWARE WHICH IS FOR GUIDANCE ONLY AIMS AT PROVIDING
-* CUSTOMERS WITH EXAMPLE CODE IN ORDER TO SAVE THEM TIME. AS A RESULT,
-* VECTORNAV SHALL NOT BE HELD LIABLE FOR ANY DIRECT, INDIRECT OR 
-* CONSEQUENTIAL DAMAGES WITH RESPECT TO ANY CLAIMS ARISING FROM THE 
-* CONTENT OF SUCH FIRMWARE AND/OR THE USE MADE BY CUSTOMERS OF THE 
-* CODING INFORMATION CONTAINED HEREIN IN CONNECTION WITH THEIR PRODUCTS.
-*******************************************************************************/
-
 /* Includes ------------------------------------------------------------------*/
 #include "VN_user.h"
 #include "VN_lib.h"
+#include "gio.h"
+#include "spi.h"
+#include "sys_common.h"
+#include "system.h"
+#include "mibspi.h"
+#include "sys_dma.h"
 
-/* Private typedef -----------------------------------------------------------*/
-/* Private define ------------------------------------------------------------*/
-/* Private macro -------------------------------------------------------------*/
-/* Private variables ---------------------------------------------------------*/
-/* Private function prototypes -----------------------------------------------*/
-/* Private functions ---------------------------------------------------------*/
-
+/* Defines -------------------------------------------------------------------*/
+#define D_SIZE 127
 
 /*******************************************************************************
 * Function Name  : VN_SPI_SetSS(unsigned char sensorID, bool LineState)
@@ -45,15 +29,14 @@ void VN_SPI_SetSS(unsigned char sensorID, VN_PinState state){
 
 /* User code to set SPI SS lines goes here. */   
   switch(sensorID){
-  
     case 0:
       if(state == VN_PIN_LOW) {
         /* Start SPI Transaction - Pull SPI CS line low */
-        GPIO_ResetBits(GPIOA, GPIO_Pin_0);
+        gioSetBit(mibspiPORT1, 0, 0);
       }
       else {
         /* End SPI transaction - Pull SPI CS line high */
-        GPIO_SetBits(GPIOA, GPIO_Pin_0);
+        gioSetBit(mibspiPORT1, 0, 1);
       }
       break;
   }
@@ -66,32 +49,31 @@ void VN_SPI_SetSS(unsigned char sensorID, VN_PinState state){
 *                  out the SPI bus. The slave select line is controlled by the 
 *                  function VN_SPI_SetSS given above, so the user only needs
 *                  to deal with sending the data out the SPI bus with this
-*                  function.
+*                  function. Note that mibspiInit() must be used before using these functions
 * Input          : data -> The 32-bit data to send over the SPI bus
 * Output         : None
 * Return         : The data received on the SPI bus
 *******************************************************************************/
 unsigned long VN_SPI_SendReceive(unsigned long data){
+  loadDataPattern(D_SIZE,&TX_DATA[0]);
 
-/* User code to send out 4 bytes over SPI goes here */
+  /* Send out 4 bytes over SPI */
   unsigned long i;
-  unsigned long ret = 0;
+  unsigned long ret;
+  uint16 TX_DATA[D_SIZE];         /* transmit buffer in sys ram */
+  uint16 RX_DATA[D_SIZE] = {0};    /* receive  buffer in sys ram */
   
-  for(i=0;i<4;i++){
-    /* Wait for SPI1 Tx buffer empty */
-    while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET);
-  
-    /* Send SPI1 requests */
-    SPI_I2S_SendData(SPI1, VN_BYTE(data, i));
-  
-    /* Wait for response from VN-100 */
-    while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_RXNE) == RESET);
+  for(i = 0; i < 4; i++){
+    /*Wait until the transfer is complete*/
+    while(!mibspiIsTransferComplete(spiREG1,0)){
+      mibspiSetData(mibspiREG1, 0, &TX_DATA);
 
-    /* Save received data in buffer */
-    ret |= ((unsigned long)SPI_I2S_ReceiveData(SPI1) << (8*i));    
+      mibspiTransfer(mibspiREG1, 0);
+    }
+    mibspiGetData(mibspiREG1, 0, &RX_DATA);
+        
   }
-  
-  return ret;
+  return ret;  
 }
 
 /*******************************************************************************
@@ -127,5 +109,60 @@ void VN_Delay(unsigned long delay_uS){
   for(i=delay_uS*10; i--; );
 }
 
-/******************* (C) COPYRIGHT 2009 VectorNav Technologies *****************
-***********************************END OF FILE*********************************/
+/***************************************** Helper Functions *********************************************/
+
+void mibspiEnableInternalLoopback(mibspiBASE_t *mibspi )
+{
+    /* enabling internal loopback */
+    mibspi->GCR1 |= 1U << 16U;
+}
+/*@brief mibspiDmaConfig: 
+  @param mibspi
+  @param channel
+  @param txchannel
+  @param rxchannel 
+*/
+void mibspiDmaConfig(mibspiBASE_t *mibspi,uint32 channel, uint32 txchannel, uint32 rxchannel)
+{
+    uint32 bufid  = 0;
+    uint32 icount = 0;
+
+    /* setting transmit and receive channels */
+    mibspi->DMACTRL[channel] |= (((rxchannel<<4)|txchannel) << 16);
+
+    /* enabling transmit and receive dma */
+    mibspi->DMACTRL[channel] |=  0x8000C000;
+
+    /* setting Initial Count of DMA transfers and the buffer utilized for DMA transfer */
+    mibspi->DMACTRL[channel] |=  (icount << 8) |(bufid<<24);
+
+}
+
+void dmaConfigCtrlPacket(uint32 sadd,uint32 dadd,uint32 dsize)
+{
+  g_dmaCTRLPKT.SADD      = sadd;              /* source address             */
+  g_dmaCTRLPKT.DADD      = dadd;              /* destination  address       */
+  g_dmaCTRLPKT.CHCTRL    = 0;                 /* channel control            */
+  g_dmaCTRLPKT.FRCNT     = 1;                 /* frame count                */
+  g_dmaCTRLPKT.ELCNT     = dsize;             /* element count              */
+  g_dmaCTRLPKT.ELDOFFSET = 4;                 /* element destination offset */
+  g_dmaCTRLPKT.ELSOFFSET = 0;                 /* element destination offset */
+  g_dmaCTRLPKT.FRDOFFSET = 0;                 /* frame destination offset   */
+  g_dmaCTRLPKT.FRSOFFSET = 0;                 /* frame destination offset   */
+  g_dmaCTRLPKT.PORTASGN  = 4;                 /* port b                     */
+  g_dmaCTRLPKT.RDSIZE    = ACCESS_16_BIT;     /* read size                  */
+  g_dmaCTRLPKT.WRSIZE    = ACCESS_16_BIT;     /* write size                 */
+  g_dmaCTRLPKT.TTYPE     = FRAME_TRANSFER ;   /* transfer type              */
+  g_dmaCTRLPKT.ADDMODERD = ADDR_INC1;         /* address mode read          */
+  g_dmaCTRLPKT.ADDMODEWR = ADDR_OFFSET;       /* address mode write         */
+  g_dmaCTRLPKT.AUTOINIT  = AUTOINIT_ON;       /* autoinit                   */
+}
+
+void loadDataPattern(uint32 psize, uint16* pptr)
+{
+    *pptr = 0xD0C0;
+    while(psize--)
+    {
+      *pptr = 0x1111 + *pptr++;
+    }
+ }
