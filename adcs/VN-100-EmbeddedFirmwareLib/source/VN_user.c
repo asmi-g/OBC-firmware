@@ -61,14 +61,13 @@ unsigned long VN_SPI_SendReceive(unsigned long data){
 
   for(i = 0; i < 4; i++){
     /*Wait until the transfer is complete*/
-    while(!mibspiIsTransferComplete(spiREG1,0)){
+    while(!mibspiIsTransferComplete(mibspiREG1,0)) {
+      /* Send the ith byte */
       mibspiSetData(mibspiREG1, 0, VN_BYTE(data,i));
-      
-
       mibspiTransfer(mibspiREG1, 0);
     }
     mibspiGetData(mibspiREG1, 0, &recieved);
-    ret |=  (unsigned long)recieved << (8*i);
+    ret |= (unsigned long)recieved << (8*i);
   }
   return ret;  
 }
