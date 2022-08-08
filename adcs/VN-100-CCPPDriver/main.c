@@ -14,22 +14,24 @@ bool UserUart_checkForReceivedData(char* buffer, size_t bufferSize, size_t* numO
 void UserUart_mockReceivedData(char* buffer, size_t bufferSize);
 void UserUart_sendData(char *data, size_t size);
 
+/* Global Variables */
 bool gIsCheckingForModelNumberResponse = false;
 bool gIsCheckingForAsyncOutputFreqResponse = false;
 bool gIsCheckingForVpeBasicControlResponse = false;
+bool sciTriggered = false;
 uint8_t gEnable, gHeadingMode, gFilteringMode, gTuningMode;
 
-int main (void){
-	char buffer[256];
-    size_t numOfBytes, readModelNumberSize, writeAsyncOutputFreqSize, readVpeBasicControlSize, writeVpeBasicControlSize;
-    size_t writeBinaryOutput1Size;
-    char genReadModelNumberBuffer[256];
-    char genWriteAsyncOutputFrequencyBuffer[256];
-    char genReadVpeBasicControlBuffer[256];
-    char genWriteVpeBasicControlBuffer[256];
-    char genWriteBinaryOutput1Buffer[256];
+char buffer[256];
+size_t numOfBytes, readModelNumberSize, writeAsyncOutputFreqSize, readVpeBasicControlSize, writeVpeBasicControlSize;
+size_t writeBinaryOutput1Size;
+char genReadModelNumberBuffer[256];
+char genWriteAsyncOutputFrequencyBuffer[256];
+char genReadVpeBasicControlBuffer[256];
+char genWriteVpeBasicControlBuffer[256];
+char genWriteBinaryOutput1Buffer[256];
 
-	VnUartPacketFinder up;
+VnUartPacketFinder up;
+int main (void){
 
 	/* Iniitalize the data structure */
 	VnUartPacketFinder_initialize(&up);
@@ -44,15 +46,6 @@ int main (void){
 	/* Initialize the UART port */
 		UserUart_initialize();
 
-	/* Continually checking for new UART data and then passing any received data to the 
-		VnUartProtocol to build, parse and verify data packets. */
-	// while (1) {
-	// 	size_t numOfBytes; 
-	// 	if (UserUart_checkForReceivedData(buffer, sizeof(buffer), &numOfBytes)) {
-	// 		VnUartPacketFinder_processReceivedData(buffer, numOfBytes);
-	// 		break;
-	// 	}
-	// }
 
 	/* We will first illustrate querying the sensor's model number. First we
 	* generate a read register command. This is subject to change depending on the desired configuration */
@@ -66,8 +59,16 @@ int main (void){
 		gIsCheckingForModelNumberResponse = true;
 		UserUart_sendData(genReadModelNumberBuffer, readModelNumberSize);
 
-		/* Now process the mock data that our fake UART port received and hand it
-		* over to our UART packet finder. */
+		/* Continually checking for new UART data and then passing any received data to the 
+				VnUartProtocol to build, parse and verify data packets. */
+			// while (1) {
+			// 	size_t numOfBytes; 
+			// 	if (UserUart_checkForReceivedData(buffer, sizeof(buffer), &numOfBytes)) {
+			// 		VnUartPacketFinder_processReceivedData(buffer, numOfBytes);
+			// 		break;
+			// 	}
+			// }
+		/* Now process the data that our UART port received */
 		UserUart_checkForReceivedData(buffer, sizeof(buffer), &numOfBytes);
 		VnUartPacketFinder_processData(&up, (uint8_t*)buffer, numOfBytes);
 		gIsCheckingForVpeBasicControlResponse = false;
@@ -272,26 +273,18 @@ void UserUart_initialize(void)
 bool UserUart_checkForReceivedData(char* buffer, size_t bufferSize, size_t* numOfBytesReceived)
 {
     (bufferSize);
-	unsigned char recievedData[256];
+	char recievedData;
+	int bytesRecieving = 1;
 	/* If SCI module not ready to recieve, return false */
     if (sciIsIdleDetected(scilinREG) == SCI_IDLE)
         return false;
-	int bytesToRead = 256; /* Set some large upper limit to read from */
-	/* recieve data and store in recievedData */
-	sciReceive(scilinREG, bytesToRead, recievedData);
-	char newBuffer [256];
-	int pos = 0;
-	/* Extract unwanted 0xFF from the previous array */
-	for (int i = 0; i < bytesToRead; i++) {
-		if (recievedData[i] != 0x000000FF) { 
-			printf("Byte #%d = %c\n" i, recievedData[i]);
-			newBuffer[pos] = recievedData[i];
-			pos++;
-		}
+	/* only recieve data if the notification has gone off */
+	if (!sciTriggered) {
+		sciTriggered = true;
+		sciReceive(scilinREG, bytesRecieving, recievedData);
 	}
-	int sizeofNewBuffer = pos+1;
-	memcpy(buffer, newBuffer, sizeofNewBuffer);
-    *numOfBytesReceived = sizeofNewBuffer;
+	memmove(buffer, recievedData, bytesRecieving);
+    *numOfBytesReceived = bytesRecieving;
     return true;	
 }
 /* Sending data to VN-100 Sensor. */
@@ -300,4 +293,10 @@ void UserUart_sendData(char *data, size_t size)
     (data);
     (size);
 	sciSend(scilinREG, size, data);
+}
+/* Interrupt that occurs when the SCI module data transfer is complete */
+void sciNotification(sciBASE_t sci, uint32 flags) {
+	/* Only process the data if the data transfer is completed */
+	VnUartPacketFinder_processData(&up, (uint8_t)buffer, 1);
+	sciTriggered = false;
 }
