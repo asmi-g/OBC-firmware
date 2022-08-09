@@ -6,7 +6,7 @@
 #include "vn/protocol/upackf.h"
 #include "vn/int.h"
 #include "vn/sensors.h"
-#include "sci.h"
+#include "sci.h" 
 
 void packetFoundHandler(void *userData, VnUartPacket *packet, size_t runningIndexOfPacketStart);
 void UserUart_initialize(void);
@@ -19,6 +19,7 @@ bool gIsCheckingForModelNumberResponse = false;
 bool gIsCheckingForAsyncOutputFreqResponse = false;
 bool gIsCheckingForVpeBasicControlResponse = false;
 bool sciTriggered = false;
+bool stopReceving = false;
 uint8_t gEnable, gHeadingMode, gFilteringMode, gTuningMode;
 
 char buffer[256];
@@ -267,36 +268,43 @@ void UserUart_initialize(void)
 	sciInit();
 	sciSetBaudrate(scilinREG, 115200); /* Use LIN PORT configured as SCI2 
 	and set baud rate to vn-100 factor default of 115200 */
-	sciEnableNotification(scilinREG, SCI_RX_INT);
 }
 /* Query the environment's UART for any data received.*/
 bool UserUart_checkForReceivedData(char* buffer, size_t bufferSize, size_t* numOfBytesReceived)
 {
-    (bufferSize);
-	char recievedData;
-	int bytesRecieving = 1;
-	/* If SCI module not ready to recieve, return false */
-    if (sciIsIdleDetected(scilinREG) == SCI_IDLE)
-        return false;
-	/* only recieve data if the notification has gone off */
-	if (!sciTriggered) {
-		sciTriggered = true;
-		sciReceive(scilinREG, bytesRecieving, recievedData);
+	(buffersize);
+	if(sciIsRxReady) {
+		unsigned char buf[128] = {'\0'};
+		int i = 0;
+
+		/* Read byte by byte until an 'f' is received or buffer is full */
+		sciReceive(scilinREG, 1, (uint8_t *)&buf[i]);
+		while(buf[i] != '*') {
+			i++;
+			if (i >= 128) {
+				break;
+			}
+			sciReceive(scilinREG, 1, (uint8_t *)&buf[i]);
+		}
+		buf[i] = '*';
+		i++;
+		int limit = i+6;
+		while (i < limit){
+			sciReceive(scilinREG, 1, (uint8_t *)&buf[i]);
+			i++;
+		}
+		memcpy(buffer, buf, i);
+		*numOfBytesReceived = i;
+		for (int j = 0; j < 10000; j++);	
+		return true;
 	}
-	memmove(buffer, recievedData, bytesRecieving);
-    *numOfBytesReceived = bytesRecieving;
-    return true;	
+	else {
+		return false;
+	}
 }
 /* Sending data to VN-100 Sensor. */
 void UserUart_sendData(char *data, size_t size)
 {
-    (data);
-    (size);
-	sciSend(scilinREG, size, data);
-}
-/* Interrupt that occurs when the SCI module data transfer is complete */
-void sciNotification(sciBASE_t sci, uint32 flags) {
-	/* Only process the data if the data transfer is completed */
-	VnUartPacketFinder_processData(&up, (uint8_t)buffer, 1);
-	sciTriggered = false;
+	/* Send message across SCI module on 115200 baud rate */
+    sciSend(scilinREG, size, data);
 }
