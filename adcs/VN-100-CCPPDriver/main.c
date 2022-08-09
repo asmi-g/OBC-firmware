@@ -286,15 +286,19 @@ bool UserUart_checkForReceivedData(char* buffer, size_t bufferSize, size_t* numO
 			}
 			sciReceive(scilinREG, 1, (uint8_t *)&buf[i]);
 		}
+		/* Add the star back to the buffer */
 		buf[i] = '*';
 		i++;
+		/* Get the last six characters "xx\r\n" */
 		int limit = i+6;
 		while (i < limit){
 			sciReceive(scilinREG, 1, (uint8_t *)&buf[i]);
 			i++;
 		}
+		/* copy local buffer to buffer outside */
 		memcpy(buffer, buf, i);
 		*numOfBytesReceived = i;
+		/* Slight delay */
 		for (int j = 0; j < 10000; j++);	
 		return true;
 	}
