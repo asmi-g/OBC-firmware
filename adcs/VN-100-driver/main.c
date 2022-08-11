@@ -1,17 +1,19 @@
 /* Includes */
 #include <string.h>
 #include <stdio.h>
+#include <sci.h> 
+
 #include "vn/util.h"
 #include "vn/protocol/upack.h"
 #include "vn/protocol/upackf.h"
 #include "vn/int.h"
 #include "vn/sensors.h"
-#include "sci.h" 
+#include "vn/user_helper.h"
+
 
 void packetFoundHandler(void *userData, VnUartPacket *packet, size_t runningIndexOfPacketStart);
 void UserUart_initialize(void);
-bool UserUart_checkForReceivedData(char* buffer, size_t bufferSize, size_t* numOfBytesReceived);
-void UserUart_mockReceivedData(char* buffer, size_t bufferSize);
+bool UserUart_checkForReceivedData(char* buffer, size_t* numOfBytesReceived);
 void UserUart_sendData(char *data, size_t size);
 
 /* Global Variables */
@@ -23,17 +25,25 @@ bool stopReceving = false;
 uint8_t gEnable, gHeadingMode, gFilteringMode, gTuningMode;
 
 char buffer[256];
-size_t numOfBytes, readModelNumberSize, writeAsyncOutputFreqSize, readVpeBasicControlSize, writeVpeBasicControlSize;
+size_t numOfBytes, readModelNumberSize, readVNYMR, readVNYPR, writeAsyncOutputFreqSize, readVpeBasicControlSize, writeVpeBasicControlSize;
 size_t writeBinaryOutput1Size;
+
+/* Buffers to hold commands */
 char genReadModelNumberBuffer[256];
+char genReadVNYMR[256];
+char genReadVNYPR[256];
 char genWriteAsyncOutputFrequencyBuffer[256];
 char genReadVpeBasicControlBuffer[256];
 char genWriteVpeBasicControlBuffer[256];
 char genWriteBinaryOutput1Buffer[256];
 
-VnUartPacketFinder up;
-int main (void){
+/* Holds the current data received */
+char yprStr[100], magStr[100], accelStr[100], angularRateStr[100];
+char enableStr[100], headingModeStr[100], filteringModeStr[100], tuningModeStr[100];
 
+
+int main (void){
+	VnUartPacketFinder up;
 	/* Iniitalize the data structure */
 	VnUartPacketFinder_initialize(&up);
 
@@ -45,59 +55,68 @@ int main (void){
 	VnUartPacketFinder_registerPacketFoundHandler(&up, packetFoundHandler, NULL);
 
 	/* Initialize the UART port */
-		UserUart_initialize();
+	UserUart_initialize();
 
 
 	/* We will first illustrate querying the sensor's model number. First we
 	* generate a read register command. This is subject to change depending on the desired configuration */
 	VnUartPacket_genReadModelNumber(
-			genReadModelNumberBuffer,
+			genReadModelNumberBuffer, /* Store command in this buffer*/
 			sizeof(genReadModelNumberBuffer),
 			VNERRORDETECTIONMODE_CHECKSUM,
 			&readModelNumberSize);
 
-		/* Now send the data to the sensor. */
-		gIsCheckingForModelNumberResponse = true;
-		UserUart_sendData(genReadModelNumberBuffer, readModelNumberSize);
+	/* Now send the data to the sensor. */
+	gIsCheckingForModelNumberResponse = true;
+	UserUart_sendData(genReadModelNumberBuffer, readModelNumberSize);
 
-		/* Continually checking for new UART data and then passing any received data to the 
-				VnUartProtocol to build, parse and verify data packets. */
-			// while (1) {
-			// 	size_t numOfBytes; 
-			// 	if (UserUart_checkForReceivedData(buffer, sizeof(buffer), &numOfBytes)) {
-			// 		VnUartPacketFinder_processReceivedData(buffer, numOfBytes);
-			// 		break;
-			// 	}
-			// }
-		/* Now process the data that our UART port received */
-		UserUart_checkForReceivedData(buffer, sizeof(buffer), &numOfBytes);
-		VnUartPacketFinder_processData(&up, (uint8_t*)buffer, numOfBytes);
-		gIsCheckingForVpeBasicControlResponse = false;
-}
+	UserUart_checkForReceivedData(buffer, &numOfBytes);
+	VnUartPacketFinder_processData(&up, (uint8_t*) buffer, numOfBytes);
+	gIsCheckingForModelNumberResponse = false;
 
-void asciiAsyncMessageReceived(void *userData, VnUartPacket *packet, size_t runningIndex)
-{
-	vec3f ypr;
-	char strConversions[50];
 
-	/* Silence 'unreferenced formal parameters' warning in Visual Studio. */
-	(userData);
-	(runningIndex);
+	/* Read YPR, magentic, acceleration and angular rate */
+	VnUartPacket_genReadYawPitchRollMagneticAccelerationAndAngularRates(
+		genReadVNYMR,
+		sizeof(genReadVNYMR),
+		VNERRORDETECTIONMODE_CHECKSUM,
+		&readVNYMR);
+	UserUart_sendData(genReadVNYMR, readVNYMR);
+	/* Continually checking for new UART data and then passing any received data to the 
+	VnUartProtocol to build, parse and verify data packets. */
+	while (1) {
+		if (UserUart_checkForReceivedData(buffer, &numOfBytes)) {
+			VnUartPacketFinder_processData(&up, (uint8_t*) buffer, numOfBytes);
+		}
+	}
 
-	/* Make sure we have an ASCII packet and not a binary packet. */
-	if (VnUartPacket_type(packet) != PACKETTYPE_ASCII)
-		return;
+	/* Read only YPR */
+	VnUartPacket_genReadYawPitchRoll(
+		genReadVNYPR,
+		sizeof(genReadVNYPR),
+		VNERRORDETECTIONMODE_CHECKSUM,
+		&readVNYPR);
+	UserUart_sendData(genReadVNYPR, &readVNYPR);
+	while (1) {
+		if (UserUart_checkForReceivedData(buffer, &numOfBytes)) {
+			/* Now process the data that our UART port received */
+			VnUartPacketFinder_processData(&up, (uint8_t*) buffer, numOfBytes);
+		}
+	}
 
-	/* Make sure we have a VNYPR data packet. */
-	if (VnUartPacket_determineAsciiAsyncType(packet) != VNYPR)
-		return;
-
-	/* We now need to parse out the yaw, pitch, roll data. */
-	VnUartPacket_parseVNYPR(packet, &ypr);
-
-	/* Now print out the yaw, pitch, roll measurements. */
-	str_vec3f(strConversions, ypr);
-	printf("ASCII Async YPR: %s\n", strConversions);
+	/* Changing ASNYC output frequency to 2Hz */
+	VnUartPacket_genWriteAsyncDataOutputFrequency(
+		genWriteAsyncOutputFrequencyBuffer,
+		sizeof(genWriteAsyncOutputFrequencyBuffer),
+		VNERRORDETECTIONMODE_CHECKSUM,
+		&writeAsyncOutputFreqSize,
+		2);
+	UserUart_sendData(genWriteAsyncOutputFrequencyBuffer);
+	while(1) {
+		if (UserUart_checkForReceivedData(buffer, &numOfBytes)){
+			VnUartPacketFinder_processData(&up, (uint8_t*)buffer, numOfBytes);
+		}
+	}
 }
 
 void asciiOrBinaryAsyncMessageReceived(void *userData, VnUartPacket *packet, size_t runningIndex)
@@ -151,7 +170,11 @@ void asciiOrBinaryAsyncMessageReceived(void *userData, VnUartPacket *packet, siz
 		return;
 	}
 }
-
+/*
+@brief 
+@param errorMessage
+@param errorCode
+ */
 int processErrorReceived(char* errorMessage, VnError errorCode)
 {
 	char errorCodeStr[100];
@@ -159,9 +182,16 @@ int processErrorReceived(char* errorMessage, VnError errorCode)
 	printf("%s\nERROR: %s\n", errorMessage, errorCodeStr);
 	return -1;
 }
+/*
+@brief Function called when notification of valid packet occurs. 
+Parses the packet according to the informantion within the packet
+@param 	userData Pointer to user supplied data which will be sent on all callback notifications.
+@param 	packet Pointer to packet finder data structure
+@param	runningIndexOfPacketStart Used for correlating the position in the received raw 
+data stream where packets are found.
+*/
 void packetFoundHandler(void *userData, VnUartPacket *packet, size_t runningIndexOfPacketStart)
 {
-    /* Silence 'unreferenced formal parameters' warning in Visual Studio. */
     (runningIndexOfPacketStart);
     (userData);
     /* When this function is called, the packet will already have been
@@ -180,7 +210,6 @@ void packetFoundHandler(void *userData, VnUartPacket *packet, size_t runningInde
             {
                 /* Parse the VNYMR message. */
                 vec3f ypr, mag, accel, angularRate;
-                char yprStr[100], magStr[100], accelStr[100], angularRateStr[100];
                 VnUartPacket_parseVNYMR(packet, &ypr, &mag, &accel, &angularRate);
                 str_vec3f(yprStr, ypr);
                 str_vec3f(magStr, mag);
@@ -192,6 +221,31 @@ void packetFoundHandler(void *userData, VnUartPacket *packet, size_t runningInde
                 printf("  Acceleration: %s\n", accelStr);
                 printf("  Angular Rate: %s\n", angularRateStr);
             }
+			else if (asyncType == VNYPR)
+			{
+				vec3f ypr;
+				VnUartPacket_parseVNYPR(packet, &yprStr[100]);
+				str_vec3f(yprStr, ypr);
+				printf("[Found VNYPR Packet]\n");
+				printf("  YawPitchRoll: %s\n", yprStr);
+			}
+			else if (asyncType == VNACC)
+			{
+				vec3f accel;
+				VnUartPacket_parseVNACC(packet, &yprStr[100]);
+				str_vec3f(accelStr, accel);
+				printf("[Found VNACC Packet]\n");
+				printf("  Acceleration: %s\n", accelStr);
+			}
+			else if (asyncType == VNMAG)
+			{
+				vec3f mag;
+				VnUartPacket_parseVNMAG(packet, &yprStr[100]);
+				str_vec3f(magStr, mag);
+				printf("[Found VNMAG Packet]\n");
+				printf("  Magnetic: %s\n", magStr);
+
+			}
         }
         else if (VnUartPacket_isResponse(packet))
         {
@@ -209,7 +263,6 @@ void packetFoundHandler(void *userData, VnUartPacket *packet, size_t runningInde
             }
             else if (gIsCheckingForVpeBasicControlResponse)
             {
-                char enableStr[100], headingModeStr[100], filteringModeStr[100], tuningModeStr[100];
                 VnUartPacket_parseVpeBasicControl(packet, &gEnable, &gHeadingMode, &gFilteringMode, &gTuningMode);
                 strFromBool(enableStr, (bool) gEnable);
                 strFromHeadingMode(headingModeStr, gHeadingMode);
@@ -234,7 +287,6 @@ void packetFoundHandler(void *userData, VnUartPacket *packet, size_t runningInde
     else if (VnUartPacket_type(packet) == PACKETTYPE_BINARY) {
         uint64_t timeStartup;
         vec3f ypr;
-        char yprStr[100];
         /* See if this is a binary packet type we are expecting. */
         if (!VnUartPacket_isCompatible(
             packet,
@@ -261,54 +313,4 @@ void packetFoundHandler(void *userData, VnUartPacket *packet, size_t runningInde
         printf("  TimeStartup: %u\n", (uint32_t) timeStartup);
         printf("  Yaw Pitch Roll: %s\n", yprStr);
     }
-}
-/* Initialize the device's UART port. */
-void UserUart_initialize(void)
-{
-	sciInit();
-	sciSetBaudrate(scilinREG, 115200); /* Use LIN PORT configured as SCI2 
-	and set baud rate to vn-100 factor default of 115200 */
-}
-/* Query the environment's UART for any data received.*/
-bool UserUart_checkForReceivedData(char* buffer, size_t bufferSize, size_t* numOfBytesReceived)
-{
-	(buffersize);
-	if(sciIsRxReady) {
-		unsigned char buf[128] = {'\0'};
-		int i = 0;
-
-		/* Read byte by byte until an 'f' is received or buffer is full */
-		sciReceive(scilinREG, 1, (uint8_t *)&buf[i]);
-		while(buf[i] != '*') {
-			i++;
-			if (i >= 128) {
-				break;
-			}
-			sciReceive(scilinREG, 1, (uint8_t *)&buf[i]);
-		}
-		/* Add the star back to the buffer */
-		buf[i] = '*';
-		i++;
-		/* Get the last six characters "xx\r\n" */
-		int limit = i+6;
-		while (i < limit){
-			sciReceive(scilinREG, 1, (uint8_t *)&buf[i]);
-			i++;
-		}
-		/* copy local buffer to buffer outside */
-		memcpy(buffer, buf, i);
-		*numOfBytesReceived = i;
-		/* Slight delay */
-		for (int j = 0; j < 10000; j++);	
-		return true;
-	}
-	else {
-		return false;
-	}
-}
-/* Sending data to VN-100 Sensor. */
-void UserUart_sendData(char *data, size_t size)
-{
-	/* Send message across SCI module on 115200 baud rate */
-    sciSend(scilinREG, size, data);
 }
