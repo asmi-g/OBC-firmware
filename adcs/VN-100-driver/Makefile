@@ -2,7 +2,7 @@ include .env
 
 CC = "${CC_FOLDER_ROOT}/bin/arm-none-eabi-gcc"
 BUILD_DIR = adcs/VN-100-driver/build
-BIN = vectorNavExample.out
+BIN = vector-nav-example.out
 
 ARM_FLAGS :=
 ARM_FLAGS += -mcpu=cortex-r4
