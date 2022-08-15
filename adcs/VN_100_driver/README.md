@@ -8,8 +8,8 @@ for you.
 
 1. Change to the top-level directory (i.e. `OBC-firmware/`)
 
-2. Run `make -f adcs/VN-100-driver/Makefile` to build
-    - To delete the build files, run `make -f adcs/VN-100-driver/Makefile clean`
+2. Run `make -f adcs/VN_100_driver/Makefile` to build
+    - To delete the build files, run `make -f adcs/VN_100_driver/Makefile clean`
 3. Open a serial terminal
     - For Windows: Try [Putty](https://www.putty.org/)
     - For Linux: Try [this](https://www.cyberciti.biz/faq/find-out-linux-serial-ports-with-setserial/)
@@ -21,5 +21,5 @@ for you.
     - Stop Bits: 2
     - Parity: None
 6. Start the serial terminal
-7. Open Uniflash and flash `acds/VN-100-driver/build/vector-nav-example.out` onto the LaunchPad
+7. Open Uniflash and flash `acds/VN_100_driver/build/vector_nav_example.out` onto the LaunchPad
 8. View User LED A blinking on the board and `Hello World!` being printed to the serial terminal

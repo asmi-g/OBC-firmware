@@ -1,8 +1,8 @@
 include .env
 
 CC = "${CC_FOLDER_ROOT}/bin/arm-none-eabi-gcc"
-BUILD_DIR = adcs/VN-100-driver/build
-BIN = vector-nav-example.out
+BUILD_DIR = adcs/VN_100_driver/build
+BIN = vector_nav_example.out
 
 ARM_FLAGS :=
 ARM_FLAGS += -mcpu=cortex-r4
@@ -24,15 +24,15 @@ CC_FLAGS += -std=gnu99
 INCLUDE_DIRS :=
 INCLUDE_DIRS += -I"${CC_FOLDER_ROOT}/arm-none-eabi/include"
 INCLUDE_DIRS += -I"hal/include"
-INCLUDE_DIRS += -I"adcs/VN-100-driver/include"
+INCLUDE_DIRS += -I"adcs/VN_100_driver/include"
 INCLUDE_DIRS += -I"drivers/include"
 
 LIBS := 
 	
 SRC_DIRS :=
 SRC_DIRS += hal/source
-SRC_DIRS += adcs/VN-100-driver/source
-SRC_DIRS += adcs/VN-100-driver
+SRC_DIRS += adcs/VN_100_driver/source
+SRC_DIRS += adcs/VN_100_driver
 
 SRCS := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.c))
 SRCS += $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.s))
