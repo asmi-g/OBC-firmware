@@ -1,26 +1,17 @@
 #include "vn/user_helper.h"
 #include <sci.h>
 
-int processErrorReceived(char* errorMessage, VnError errorCode)
-{
-	char errorCodeStr[100];
-	strFromVnError(errorCodeStr, errorCode);
-	printf("%s\nERROR: %s\n", errorMessage, errorCodeStr);
-	return -1;
-}
-
 /* Initialize the device's UART port. */
 void UserUart_initialize(void)
 {
 	sciInit();
 	sciSetBaudrate(scilinREG, 115200); /* Use LIN PORT configured as SCI2 
-	and set baud rate to vn-100 factor default of 115200 */
+	and set baud rate to vn-100 factory default of 115200 */
 }
 
 /* Query the environment's UART for any data received.*/
-bool UserUart_checkForReceivedData(char* buffer, size_t bufferSize, size_t* numOfBytesReceived)
+bool UserUart_checkForReceivedData(char* buffer, size_t* numOfBytesReceived)
 {
-	(buffersize);
 	if (sciIsRxReady == SCI_RX_INT) {
 		unsigned char buf[128] = {'\0'};
 		int i = 0;
@@ -47,7 +38,7 @@ bool UserUart_checkForReceivedData(char* buffer, size_t bufferSize, size_t* numO
 		memcpy(buffer, buf, i);
 		*numOfBytesReceived = i;
 		/* Slight delay */
-		for (int j = 0; j < 10000; j++);	
+		for (int j = 0; j < 10000; j++);
 		return true;
 	}
 	else {
