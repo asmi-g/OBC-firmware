@@ -2,7 +2,10 @@
 #include <sci.h>
 
 void RESFactory() {
-	UserUart_sendData("$VNRFS*5F", 10);
+	char command [256];
+	size_t len;
+	VnUartPacket_genCmdRestoreFactorySettings(command, sizeof(command), VNERRORDETECTIONMODE_CHECKSUM, &len);
+	UserUart_sendData(command, len);
 }
 void pauseASYNC() {
 	UserUart_sendData("$VNASY,0*XX", 12);
@@ -11,7 +14,16 @@ void resumeASYNC() {
 	UserUart_sendData("$VNASY,1*XX", 12);
 }
 void tare() {
-	UserUart_sendData("$VNTAR*5F", 10);
+	char command [256];
+	size_t len;
+	VnUartPacket_genCmdTare(command, sizeof(command), VNERRORDETECTIONMODE_CHECKSUM, &len);
+	UserUart_sendData(command, len);
+}
+void resetIMU(){
+	char command [256];
+	size_t len;
+	VnUartPacket_genCmdReset(command, sizeof(command), VNERRORDETECTIONMODE_CHECKSUM, &len);
+	UserUart_sendData(command, len);
 }
 
 void readModelNumREG(){
