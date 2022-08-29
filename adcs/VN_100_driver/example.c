@@ -8,32 +8,19 @@
 #include <stdio.h>
 #include <sci.h> 
 
-void packetFoundHandler(void *userData, VnUartPacket *packet, size_t runningIndexOfPacketStart);
-void UserUart_initialize(void);
-bool UserUart_checkForReceivedData(char* buffer, size_t* numOfBytesReceived);
-void UserUart_sendData(char *data, size_t size);
-
-/* Global Variables for response message */
-bool gIsCheckingForModelNumberResponse = false;
-bool gIsCheckingForAsyncOutputFreqResponse = false;
-bool gIsCheckingForVpeBasicControlResponse = false;
-uint8_t gEnable, gHeadingMode, gFilteringMode, gTuningMode;
-
 /* Buffer that temporarily stores the data received from the sensor*/
 char buffer[256];
+/* Holds the number of elements within the received buffer */
+size_t numOfBytes;
 
-/* The number of bytes within each respective buffer */
-size_t numOfBytes, readModelNumberSize, readVNYMR, readVNYPR, writeAsyncOutputFreqSize, readVpeBasicControlSize, writeVpeBasicControlSize;
-size_t writeBinaryOutput1Size;
+/* The number of bytes within each respective command buffer */
+size_t readVNYMR, writeAsyncFreq;
 
 /* Buffers to hold commands that will be sent to the sensor */
 char genReadModelNumberBuffer[256];
 char genReadVNYMR[256];
 char genReadVNYPR[256];
 char genWriteAsyncOutputFrequencyBuffer[256];
-char genReadVpeBasicControlBuffer[256];
-char genWriteVpeBasicControlBuffer[256];
-char genWriteBinaryOutput1Buffer[256];
 
 /* Holds the current data received */
 char yprStr[100], magStr[100], accelStr[100], angularRateStr[100];
@@ -61,8 +48,27 @@ int main (void) {
         /* This should give us each of the respective readings */
     }
     else {
-        VnError error;
-        processErrorReceived(buffer, )
+        processErrorReceived(buffer, numOfBytes);
+    }
+
+    /* Change the output frequency of the asyncronous data output to 2Hz */
+    VnUartPacket_genWriteAsyncDataOutputFrequency(
+    genWriteAsyncOutputFrequencyBuffer,
+    sizeof(genWriteAsyncOutputFrequencyBuffer),
+    VNERRORDETECTIONMODE_CHECKSUM,
+    &writeAsyncFreq,
+    2);
+
+    UserUart_sendData(genWriteAsyncOutputFrequencyBuffer, writeAsyncFreq);
+    UserUart_checkForReceivedData(buffer, &numOfBytes);
+    if (ErrorReceived(buffer) == 0){
+        VnUartPacket packet;
+        VnUartPacket_initialize(packet, buffer, numOfBytes);
+        uint32_t asyncOutputFreq;
+        VnUartPacket_parseAsyncDataOutputFrequency(packet, &asyncOutputFreq);
+    }
+    else {
+        processErrorReceived(buffer, numOfBytes);
     }
 }
 
@@ -82,7 +88,7 @@ int ErrorReceived(char* message) {
 int processErrorReceived(char* errorMessage, size_t len)
 {
 	char errorCodeStr[100] = {'\0'};
-    for (int i = 7; i <= len; i++){
+    for (int i = 7; i < len; i++){
         errorCodeStr[i] = errorMessage[i];
     }
     if (strcmp(errorCodeStr, '1') == 0){
@@ -125,6 +131,5 @@ int processErrorReceived(char* errorMessage, size_t len)
         printf("Error buffer overflow\n");
     }
     return -1
-    
 }
 

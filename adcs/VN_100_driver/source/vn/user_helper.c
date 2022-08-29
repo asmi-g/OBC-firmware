@@ -1,6 +1,26 @@
 #include "vn/user_helper.h"
 #include <sci.h>
 
+void RESFactory() {
+	UserUart_sendData("$VNRFS*5F", 10);
+}
+void pauseASYNC() {
+	UserUart_sendData("$VNASY,0*XX", 12);
+}
+void resumeASYNC() {
+	UserUart_sendData("$VNASY,1*XX", 12);
+}
+void tare() {
+	UserUart_sendData("$VNTAR*5F", 10);
+}
+
+void readModelNumREG(){
+	char modelNum[24]; /* Max model number size is 24 characters */
+	size_t len;
+	UserUart_sendData("$VNWRG,1*XX",12);
+	UserUart_checkForReceivedData(modelNum, len);
+	printf("The model number is: %s", modelNum);
+}
 /* Initialize the device's UART port. */
 void UserUart_initialize(void)
 {

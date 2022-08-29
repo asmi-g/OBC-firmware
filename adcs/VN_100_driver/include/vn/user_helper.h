@@ -4,7 +4,14 @@
 #include "vn/protocol/upack.h"
 #include "vn/protocol/upackf.h"
 
-int processErrorReceived(char* errorMessage, VnError errorCode);
+/* Common commands */
+void RESFactory();
+void pauseASYNC();
+void resumeASYNC();
+void tare();
+void readModelNumREG();
+
+/* UART USER FUNCTIONS */
 void UserUart_initialize(void);
 bool UserUart_checkForReceivedData(char* buffer, size_t* numOfBytesReceived);
 void UserUart_sendData(char *data, size_t size);
