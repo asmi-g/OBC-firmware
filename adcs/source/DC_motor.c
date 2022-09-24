@@ -3,7 +3,6 @@
 /* USER CODE BEGIN (1) */
 #include "DC_motor.h"
 #include <math.h>
-#include <time.h>
 #include <unistd.h>
 /* USER CODE END */
 
@@ -39,7 +38,7 @@ void driveMotor(struct DC_Motor *this, uint32 speed, float64 per){
         pwmSetDuty(this->hetRam,this->secondpwm,0); //Reverse pin is pulled low
     }
     else {
-        sig.duty = abs(speed);
+        sig.duty = -speed;
         pwmSetDuty(this->hetRam,this->firstpwm,0); //forwards pin is pulled low
         pwmSetSignal(this->hetRam,this->secondpwm, sig); //Write PWM to reverse pin
     }
@@ -65,7 +64,7 @@ void driveMotor_Torque (struct DC_Motor *this, double torque, int per){
         pwmSetDuty(this->hetRam,this->secondpwm,0); //Reverse pin is pulled low
     }
     else {
-        sig.duty = abs(speed);
+        sig.duty = -speed;
         pwmSetDuty(this->hetRam,this->firstpwm,0); //forwards pin is pulled low
         pwmSetSignal(this->hetRam,this->secondpwm, sig); //Write PWM to reverse pin
     }
