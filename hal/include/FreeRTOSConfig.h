@@ -97,7 +97,7 @@
 #define configUSE_TICK_HOOK			  0
 #define configUSE_TRACE_FACILITY	  0
 #define configUSE_16_BIT_TICKS		  0
-#define configCPU_CLOCK_HZ			  ( ( unsigned portLONG ) 110000000 ) /* Timer clock. */
+#define configCPU_CLOCK_HZ			  ( ( unsigned portLONG ) 73333000 ) /* Timer clock. */
 #define configTICK_RATE_HZ			  ( ( TickType_t ) 1000 )
 #define configMAX_PRIORITIES		  ( 5 )
 #define configMINIMAL_STACK_SIZE	  ( ( unsigned portSHORT ) 128 )
@@ -110,7 +110,7 @@
 /* USER CODE BEGIN (1) */
 /* USER CODE END */
 
-#define configSUPPORT_STATIC_ALLOCATION			1
+#define configSUPPORT_STATIC_ALLOCATION			0
 #define configSUPPORT_DYNAMIC_ALLOCATION		1
 
 #define configNUM_THREAD_LOCAL_STORAGE_POINTERS 1
@@ -163,6 +163,11 @@
 #define configASSERT( x ) if( ( x ) == pdFALSE ) { taskDISABLE_INTERRUPTS(); for( ;; ); }
 
 /* USER CODE BEGIN (5) */
+#undef configSUPPORT_STATIC_ALLOCATION
+#define configSUPPORT_STATIC_ALLOCATION 1
+
+#undef INCLUDE_xTaskGetCurrentTaskHandle
+#define INCLUDE_xTaskGetCurrentTaskHandle 1
 /* USER CODE END */
 
 #endif /* FREERTOS_CONFIG_H */

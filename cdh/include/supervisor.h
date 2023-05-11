@@ -1,13 +1,9 @@
 #ifndef CDH_INCLUDE_SUPERVISOR_H_
 #define CDH_INCLUDE_SUPERVISOR_H_
 
-#include <sys_common.h>
+#include "obc_errors.h"
 
-/* Supervisor task config */
-#define SUPERVISOR_STACK_SIZE   1024
-#define SUPERVISOR_NAME         "supervisor"
-#define SUPERVISOR_PRIORITY     1
-#define SUPERVISOR_DELAY_TICKS  1000/portTICK_PERIOD_MS
+#include <sys_common.h>
 
 /**
  * @enum	supervisor_event_id_t
@@ -17,7 +13,6 @@
 */
 typedef enum {
     SUPERVISOR_NULL_EVENT_ID,
-    TURN_OFF_LED_EVENT_ID,
 } supervisor_event_id_t;
 
 /**
@@ -40,11 +35,6 @@ typedef struct {
     supervisor_event_data_t data;
 } supervisor_event_t;
 
-/* Supervisor queue config */
-#define SUPERVISOR_QUEUE_LENGTH 10
-#define SUPERVISOR_QUEUE_ITEM_SIZE sizeof(supervisor_event_t)
-#define SUPERVISOR_QUEUE_WAIT_PERIOD 10/portTICK_PERIOD_MS
-
 /**
  * @brief	Initialize the supervisor task and associated FreeRTOS constructs (queues, timers, etc.)
  */
@@ -53,8 +43,8 @@ void initSupervisor(void);
 /**
  * @brief	Send an event to the supervisor queue.
  * @param	event	Event to send.
- * @return	1 if successful, 0 otherwise.
+ * @return The error code
  */
-uint8_t sendToSupervisorQueue(supervisor_event_t *event);
+obc_error_code_t sendToSupervisorQueue(supervisor_event_t *event);
 
 #endif /* CDH_INCLUDE_SUPERVISOR_H_ */
